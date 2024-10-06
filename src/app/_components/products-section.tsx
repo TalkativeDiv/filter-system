@@ -375,7 +375,7 @@ export const ProductsSection = () => {
               <EmptyState />
             ) : products ? (
               products?.map((product) => (
-                <Product key={product.id} product={product.metadata!} />
+                <Product key={product.id} product={product.metadata!} inGrid />
               ))
             ) : (
               new Array(12)

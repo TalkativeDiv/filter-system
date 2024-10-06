@@ -4,7 +4,8 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "./_components/providers";
 import { Footer } from "./_components/footer";
-
+import { Header } from "./_components/header";
+import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -29,7 +30,9 @@ export default function RootLayout({
         )}
       >
         <Providers>
+          <Header />
           <main>{children}</main>
+          <Toaster closeButton />
           <Footer />
         </Providers>
       </body>

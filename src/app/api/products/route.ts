@@ -65,7 +65,6 @@ export const POST = async (req: NextRequest) => {
       includeMetadata: true,
       filter: filter.hasFilter() ? filter.get() : undefined,
     });
-
     return new Response(JSON.stringify(products));
   } catch (error) {
     console.error(error);
