@@ -24,7 +24,7 @@ export const Hero = () => (
               href="/products"
               className={buttonVariants({ variant: "primary" })}
             >
-              Live demo
+              Products
             </Link>
             <Link
               href="https://github.com/TalkativeDiv/filter-system"

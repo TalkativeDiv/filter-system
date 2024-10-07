@@ -1,5 +1,5 @@
 "use client";
-import { Minus, Plus, Shirt, ShoppingCart, X } from "lucide-react";
+import { Shirt, ShoppingCart } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -9,8 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "../_stores/cart";
-import { Product } from "@/db";
-import { Cart } from "./cart";
+import { Cart, getTotalPrice } from "./cart";
 export const Header = () => {
   const items = useCartStore((state) => state.items);
   return (
@@ -31,11 +30,7 @@ export const Header = () => {
               Shop
             </a>
           </li>
-          <li>
-            <a href="/cart" className="hover:underline hover:text-zinc-700">
-              Cart
-            </a>
-          </li>
+  
         </ul>
       </div>
       <Sheet>
@@ -49,7 +44,9 @@ export const Header = () => {
           <SheetHeader className="border-b py-4">
             <SheetTitle>Your Cart</SheetTitle>
           </SheetHeader>
-          <br />
+          <h3 className="my-4 font-bold text-2xl">
+            Total: ${getTotalPrice(items)}
+          </h3>
           <Cart />
         </SheetContent>
       </Sheet>

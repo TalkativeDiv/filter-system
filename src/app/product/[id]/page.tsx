@@ -2,26 +2,31 @@
 
 import { type Product as TProduct } from "@/db";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { Product } from "@/app/_components/products/product";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/app/_stores/cart";
 import React from "react";
-import { LoaderCircle } from "lucide-react";
+
 import { toast } from "sonner";
 import { ProductSkeleton } from "@/app/_components/products/product-skeleton";
+import { ErrorPage } from "@/app/_components/error-page";
 type Result = {
-  product: {
+  product?: {
     id: string;
     vector: [number, number, number];
     metadata: TProduct;
   };
-  relatedProducts: [
+  relatedProducts?: [
     { id: string; score: number; metadata: TProduct },
     { id: string; score: number; metadata: TProduct },
     { id: string; score: number; metadata: TProduct }
   ];
+  error?: {
+    message: string;
+    code: number;
+  };
 };
 function ProductComponent({
   data,
@@ -30,50 +35,56 @@ function ProductComponent({
   data: Result;
   handleClick: (item: TProduct) => void;
 }) {
-  return (
-    <div className="flex justify-center items-center min-h-[85vh] flex-col gap-4">
-      <div className="lg:border-2 lg:border-border p-4 rounded-xl flex justify-center  flex-col lg:flex-row transition-all">
-        <div className="flex justify-center items-center ">
-          {" "}
-          {data && <Product product={data?.product.metadata} inGrid={false} />}
-        </div>
-        <Separator
-          className="w-[2px] mx-4 min-h-96 hidden lg:block"
-          orientation="vertical"
-        />
-        <Separator className="h-[2px] my-4 min-w-96 lg:hidden block" />
-        <div className="flex flex-col text-lg tracking-tight max-w-full  min-h-full lg:max-w-40 m-4 gap-8 lg:gap-0">
-          <p className="text-center text-zinc-600 italic">
-            &quot;A{" "}
-            {data?.product.metadata.size == "L"
-              ? "large"
-              : data?.product.metadata.size == "S"
-              ? "small"
-              : "medium"}{" "}
-            {data?.product.metadata.color} shirt. It is made with a high quality
-            cotton material that is comfortable and sustainably sourced&quot;
-          </p>
-          <Button
-            variant="primary"
-            size="lg"
-            className="md:mt-auto mt-4 sm:min-w-full"
-            onClick={() => handleClick(data?.product.metadata as TProduct)}
-          >
-            Add to cart
-          </Button>
-        </div>
-      </div>
-      <Separator />
-      <h2 className="font-semibold text-lg">Related Products</h2>
-      <div className="grid lg:grid-cols-3 grid-cols-1 gap-3">
-        {data.relatedProducts.map((product) => (
-          <div key={product.id} className="p-2 border rounded-lg">
-            <Product product={product.metadata} inGrid size="sm" />
+  if (data.product) {
+    return (
+      <div className="flex justify-center items-center min-h-[85vh] flex-col gap-4">
+        <div className="lg:border-2 lg:border-border p-4 rounded-xl flex justify-center  flex-col lg:flex-row transition-all">
+          <div className="flex justify-center items-center ">
+            {" "}
+            <Product
+              product={data?.product?.metadata as TProduct}
+              inGrid={false}
+            />
           </div>
-        ))}
+          <Separator
+            className="w-[2px] mx-4 min-h-96 hidden lg:block"
+            orientation="vertical"
+          />
+          <Separator className="h-[2px] my-4 min-w-96 lg:hidden block" />
+          <div className="flex flex-col text-lg tracking-tight max-w-full  min-h-full lg:max-w-40 m-4 gap-8 lg:gap-0">
+            <p className="text-center text-zinc-600 italic">
+              &quot;A{" "}
+              {data?.product?.metadata.size == "L"
+                ? "large"
+                : data?.product?.metadata.size == "S"
+                ? "small"
+                : "medium"}{" "}
+              {data?.product?.metadata.color} shirt. It is made with a high
+              quality cotton material that is comfortable and sustainably
+              sourced&quot;
+            </p>
+            <Button
+              variant="primary"
+              size="lg"
+              className="md:mt-auto mt-4 sm:min-w-full"
+              onClick={() => handleClick(data?.product?.metadata as TProduct)}
+            >
+              Add to cart
+            </Button>
+          </div>
+        </div>
+        <Separator />
+        <h2 className="font-semibold text-lg">Related Products</h2>
+        <div className="grid lg:grid-cols-3 grid-cols-1 gap-3">
+          {data.relatedProducts?.map((product) => (
+            <div key={product.id} className="p-2 border rounded-lg">
+              <Product product={product.metadata} inGrid size="sm" />
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 }
 function CloseUpProductSkeleton() {
   return (
@@ -136,10 +147,25 @@ export default function ProductPage({
   const { data } = useQuery({
     queryKey: ["product", productId],
     queryFn: async () => {
-      const { data } = await axios.post<Result>("/api/product", {
-        productId,
-      });
-      return data;
+      try {
+        const { data } = await axios.post<Result>("/api/product", {
+          productId,
+        });
+        return data;
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          return {
+            error: {
+              code: error.response?.status,
+              message: error.response?.data.error,
+            },
+          };
+        }
+        return { message: "Internal Server Error", code: 500 };
+        // return {
+        //   error: { code: error.response.status },
+        // };
+      }
     },
   });
 
@@ -156,12 +182,14 @@ export default function ProductPage({
   }
   return (
     <>
-      {data ? (
-        <ProductComponent data={data} handleClick={handleClick} />
+      {(data as Result)?.product ? (
+        <ProductComponent data={data as Result} handleClick={handleClick} />
+      ) : data?.error ? (
+        <ErrorPage
+          code={data.error.code as number}
+          message={data.error.message}
+        />
       ) : (
-        // <div className="flex justify-center items-center gap-4">
-        //   <LoaderCircle className="animate-spin text-teal-600" /> Loading...
-        // </div>
         <CloseUpProductSkeleton />
       )}
     </>
